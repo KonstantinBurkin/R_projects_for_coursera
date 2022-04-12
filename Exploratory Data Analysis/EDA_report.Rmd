@@ -2,7 +2,9 @@
 title: "Exploratory Data Analysis"
 author: "Konstantin Burkin"
 date: '2022-04-10'
-output: html_document
+output:
+  html_document:
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
@@ -31,7 +33,9 @@ Fine particulate matter (PM2.5) is an ambient air pollutant for which there is s
 
 -   The second file contains information of a particular emission source for the corresponding SCC code.
 
-```{r}
+Exploration will be mostly performed for the first dataset since it has numeric data that is more informative and interesting. Some statistical information about this data set is calculated and shown below:
+
+```{r, message = FALSE}
 # download data frame
 url <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2FNEI_data.zip"
 dir.create("data")
@@ -45,7 +49,16 @@ SCC <- readRDS("./data/Source_Classification_Code.rds")
 # upload libraries
 library(ggplot2)
 library(dplyr)
+{message = TRUE}
 str(NEI)
+```
+
+The dataset I am analyzing has 6 variables, which were described above, and 697651 observations. The year and emissions columns contain numeric data, whereas other contain character data type.
+
+```{r}
+cat("Statistical summary of 'Emmisions' column:\n\n");   summary(NEI[,4])
+cat("\n\nValues of 'Year' column:\t");  cat(unique(NEI$year))
+cat("\n\nValues of 'Type' column:\t");  cat(unique(NEI$type))
 ```
 
 ## Including Plots

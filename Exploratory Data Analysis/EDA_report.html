@@ -209,6 +209,81 @@ window.buildTabsets = function(tocID) {
 };
 
 </script>
+<script>
+window.initializeCodeFolding = function(show) {
+
+  // handlers for show-all and hide all
+  $("#rmd-show-all-code").click(function() {
+    $('div.r-code-collapse').each(function() {
+      $(this).collapse('show');
+    });
+  });
+  $("#rmd-hide-all-code").click(function() {
+    $('div.r-code-collapse').each(function() {
+      $(this).collapse('hide');
+    });
+  });
+
+  // index for unique code element ids
+  var currentIndex = 1;
+
+  // select all R code blocks
+  var rCodeBlocks = $('pre.r, pre.python, pre.bash, pre.sql, pre.cpp, pre.stan, pre.julia, pre.foldable');
+  rCodeBlocks.each(function() {
+
+    // create a collapsable div to wrap the code in
+    var div = $('<div class="collapse r-code-collapse"></div>');
+    var showThis = (show || $(this).hasClass('fold-show')) && !$(this).hasClass('fold-hide');
+    var id = 'rcode-643E0F36' + currentIndex++;
+    div.attr('id', id);
+    $(this).before(div);
+    $(this).detach().appendTo(div);
+
+    // add a show code button right above
+    var showCodeText = $('<span>' + (showThis ? 'Hide' : 'Code') + '</span>');
+    var showCodeButton = $('<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm code-folding-btn pull-right float-right"></button>');
+    showCodeButton.append(showCodeText);
+    showCodeButton
+        .attr('data-toggle', 'collapse')
+        .attr('data-bs-toggle', 'collapse') // BS5
+        .attr('data-target', '#' + id)
+        .attr('data-bs-target', '#' + id)   // BS5
+        .attr('aria-expanded', showThis)
+        .attr('aria-controls', id);
+
+    var buttonRow = $('<div class="row"></div>');
+    var buttonCol = $('<div class="col-md-12"></div>');
+
+    buttonCol.append(showCodeButton);
+    buttonRow.append(buttonCol);
+
+    div.before(buttonRow);
+
+    // show the div if necessary
+    if (showThis) div.collapse('show');
+
+    // update state of button on show/hide
+    //   * Change text
+    //   * add a class for intermediate states styling
+    div.on('hide.bs.collapse', function () {
+      showCodeText.text('Code');
+      showCodeButton.addClass('btn-collapsing');
+    });
+    div.on('hidden.bs.collapse', function () {
+      showCodeButton.removeClass('btn-collapsing');
+    });
+    div.on('show.bs.collapse', function () {
+      showCodeText.text('Hide');
+      showCodeButton.addClass('btn-expanding');
+    });
+    div.on('shown.bs.collapse', function () {
+      showCodeButton.removeClass('btn-expanding');
+    });
+
+  });
+
+}
+</script>
 <style type="text/css">.hljs-literal {
 color: #990073;
 }
@@ -345,6 +420,9 @@ pre code {
 </style>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
 
 
 
@@ -360,6 +438,14 @@ pre code {
 
 
 <div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
 
 
 
@@ -401,6 +487,10 @@ non-road)</p></li>
 <li><p>The second file contains information of a particular emission
 source for the corresponding SCC code.</p></li>
 </ul>
+<p>Exploration will be mostly performed for the first dataset since it
+has numeric data that is more informative and interesting. Some
+statistical information about this data set is calculated and shown
+below:</p>
 <pre class="r"><code># download data frame
 url &lt;- &quot;https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2FNEI_data.zip&quot;
 dir.create(&quot;data&quot;)</code></pre>
@@ -414,16 +504,9 @@ SCC &lt;- readRDS(&quot;./data/Source_Classification_Code.rds&quot;)
 
 # upload libraries
 library(ggplot2)
-library(dplyr)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;dplyr&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>str(NEI)</code></pre>
+library(dplyr)
+{message = TRUE}
+str(NEI)</code></pre>
 <pre><code>## &#39;data.frame&#39;:    6497651 obs. of  6 variables:
 ##  $ fips     : chr  &quot;09001&quot; &quot;09001&quot; &quot;09001&quot; &quot;09001&quot; ...
 ##  $ SCC      : chr  &quot;10100401&quot; &quot;10100404&quot; &quot;10100501&quot; &quot;10200401&quot; ...
@@ -431,6 +514,23 @@ library(dplyr)</code></pre>
 ##  $ Emissions: num  15.714 234.178 0.128 2.036 0.388 ...
 ##  $ type     : chr  &quot;POINT&quot; &quot;POINT&quot; &quot;POINT&quot; &quot;POINT&quot; ...
 ##  $ year     : int  1999 1999 1999 1999 1999 1999 1999 1999 1999 1999 ...</code></pre>
+<p>The dataset I am analyzing has 6 variables, which were described
+above, and 697651 observations. The year and emissions columns contain
+numeric data, whereas other contain character data type.</p>
+<pre class="r"><code>cat(&quot;Statistical summary of &#39;Emmisions&#39; column:\n\n&quot;);   summary(NEI[,4])</code></pre>
+<pre><code>## Statistical summary of &#39;Emmisions&#39; column:</code></pre>
+<pre><code>##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+##      0.0      0.0      0.0      3.4      0.1 646952.0</code></pre>
+<pre class="r"><code>cat(&quot;\n\nValues of &#39;Year&#39; column:\t&quot;);  cat(unique(NEI$year))</code></pre>
+<pre><code>## 
+## 
+## Values of &#39;Year&#39; column: </code></pre>
+<pre><code>## 1999 2002 2005 2008</code></pre>
+<pre class="r"><code>cat(&quot;\n\nValues of &#39;Type&#39; column:\t&quot;);  cat(unique(NEI$type))</code></pre>
+<pre><code>## 
+## 
+## Values of &#39;Type&#39; column: </code></pre>
+<pre><code>## POINT NONPOINT ON-ROAD NON-ROAD</code></pre>
 </div>
 <div id="including-plots" class="section level2">
 <h2>Including Plots</h2>
@@ -610,6 +710,11 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
 
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
