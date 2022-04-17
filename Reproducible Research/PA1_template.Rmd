@@ -1,0 +1,65 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+## Loading and preprocessing the data
+```{r}
+df <-  read.csv("activity.csv")
+df$date <- as.Date(df$date, format="%Y-%m-%d")
+summary(df)
+```
+
+## What is mean total number of steps taken per day?
+```{r}
+library(dplyr)
+x <- aggregate(df$steps, by=list(df$date), FUN=sum, na.rm=TRUE)
+hist(x$x, xlab = "steps per day", main="")
+cat("mean =", round(mean(x$x), digits = 0), 
+    "\nmedian =",  median(x$x))
+```
+
+
+## What is the average daily activity pattern?
+```{r}
+int <- aggregate(df$steps, by=list(df$interval), FUN=mean, na.rm=TRUE)
+plot(x = int$Group.1, y = int$x, type = "l", xlab = "5-min intermals", ylab = "steps")
+cat("Max interval:", int[int$x==max(int$x),]$Group.1)
+```
+
+
+
+## Imputing missing values
+```{r}
+sum(is.na(df))
+new_df <- df
+# replace with interval average
+for(i in 1:nrow(new_df)){
+    if (is.na(new_df$steps[i]) == TRUE) {
+      new_df[i,]$steps <- int[int$Group.1 == new_df[i,]$interval,]$x
+    }}
+# new hist
+new_x <- aggregate(new_df$steps, by=list(new_df$date), FUN=sum, na.rm=TRUE)
+hist(new_x$x, xlab = "steps per day", main="")
+cat("mean =", round(mean(new_x$x), digits = 0), 
+    "\nmedian =",  median(new_x$x))
+```
+
+These values differ from the estimates from the first part of the assignment. Mean got higher and now equals the median. Median stayed the same.
+
+## Are there differences in activity patterns between weekdays and weekends?
+```{r}
+library(timeDate)
+new_df$day <- ifelse(isWeekday(new_df$date, wday=1:5), "weekday", "weekend")
+new_df$day <- factor(new_df$day)
+
+weekday_x <- aggregate(steps ~ interval, data=new_df[new_df$day=="weekday",], FUN=mean)
+weekend_x <- aggregate(steps ~ interval, data=new_df[new_df$day=="weekend",], FUN=mean)
+par(mfrow=c(2,1))
+plot(x = weekday_x$interval, y = weekday_x$steps, type = "l", xlab = "5-min intermals", ylab = "steps", main="weekday")
+plot(x = weekend_x$interval, y = weekend_x$steps, type = "l", xlab = "5-min intermals", ylab = "steps", main="weekend")
+```
+
